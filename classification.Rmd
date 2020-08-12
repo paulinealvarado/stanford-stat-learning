@@ -192,7 +192,7 @@ sum(lda.pred$posterior[,1]<.5)
 
 ```
 
-posterior probability output by the model corresponds to the probability that the market will decrease
+Posterior probability output by the model corresponds to the probability that the market will decrease
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 lda.pred$posterior [1:20,1]
@@ -200,19 +200,32 @@ lda.class [1:20]
 
 ```
 
-example: predict market decrease if posterior probability is >=90%. no returns because no day in 2005 meet that thresshold. greatest porbability of decrease in all of 2005 is 52.2%
+example: Predict market decrease if posterior probability is >=90%. No returns because no day in 2005 meet that thresshold. Greatest porbability of market decrease in all of 2005 is 52.2%.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 sum(lda.pred$posterior[,1]>.9)
 
 ```
 
+
+# Quadratic Discriminant Analysis
+
+##Fit model.
+Similar syntax to lda(). Output contains group means, but not coefficients. 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+qda.fit = qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+qda.fit
 
 ```
 
-
+# Predict
+Output indicates that QDA prediction have 60% accuracy, which may be better than LDA and logistic. Need to evaluate performance on larger test set.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+qda.class = predict(qda.fit, Smarket.2005)$class
+table(qda.class, Direction.2005)
+mean(qda.class == Direction.2005)
 
 ```
 
