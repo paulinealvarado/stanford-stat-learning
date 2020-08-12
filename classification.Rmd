@@ -272,44 +272,97 @@ table(knn.pred, Direction.2005)
 
 ```
 
+# KNN Application to Caravan Insurance Data
 
+## Load data set  
+85 predictors measuring demographic characteristics for 5822 individuals. DV is Purchase, indicates individual purchased caravan insurance policy. Only 6% purchased caravan insurance.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+dim(Caravan)
+summary(Caravan$Purchase)
+
+348/5822
 
 ```
 
+## Standardize Data
+All variables are given mean of zero and SD of 1 to be on comparable scale.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+standardized.X = scale(Caravan[,-86]) # exclude response variable 
+var(Caravan[,1])
+var(Caravan[,2])
+var(standardized.X[,1])
+var(standardized.X[,2])
 
 ```
 
-
+## Split observation into test set (first 1,000 observations) and training set (rest).
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+test = 1:1000
+train.X = standardized.X[-test,]
+test.X = standardized.X[test,]
+train.Y = Caravan$Purchase[-test]
+test.Y = Caravan$Purchase[test]
 
 ```
 
+## Fit KNN model on training  data w/ K = 1
+KNN test set = ~12% error rate 
+Since 6% purchased insurance -> error rate down to 6% by always predicting "No"  
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Y, k = 1)
+mean(test.Y != knn.pred)
+mean(test.Y != "No")
 
 ```
 
+# Evaluate perfomance on test data for K = 1
+Result: 11.7% customers purchase insurance data
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+table(knn.pred, test.Y)
+
+ 9/(68+9)
 
 ```
 
-
+## Fit KNN model on training  data w/ K = 3 and K = 5
+Results: KNN is finding real patterns
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# K = 3
+knn.pred = knn(train.X,test.X,train.Y, k = 3)
+table(knn.pred ,test.Y)
+5/26
+
+# K = 5
+knn.pred = knn(train.X,test.X,train.Y,k = 5)
+table(knn.pred,test.Y)
+4/15
 
 ```
 
+## Fit logistic regression model
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
+glm.fits <- glm(Purchase ~ ., data = Caravan, family = binomial, subset = -test)
+
+# 50% threshold: Only 7% will purchase
+glm.probs = predict(glm.fits, Caravan[test,], type = "response")
+glm.pred = rep("No", 1000)
+glm.pred[glm.probs > .5] = "Yes"
+table(glm.pred, test.Y)
+
+# 25% threshold: 33% will purchase
+glm.probs = predict(glm.fits, Caravan[test,], type = "response")
+glm.pred = rep("No", 1000)
+glm.pred[glm.probs > .25] = "Yes"
+table(glm.pred, test.Y)
+11/(22+11)
+
+
 ```
-
-```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
-
-```
-
-
-```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
-
-```
-
-
