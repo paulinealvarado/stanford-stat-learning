@@ -229,7 +229,46 @@ mean(qda.class == Direction.2005)
 
 ```
 
+# K-Nearest Neighbors
+Different from other model-fitting functions. Forms prediction using single command with four inputs. Predicts class of a test observation by identifying observations nearest to it with scale being important. cbind() Lag1 and Lag2 into two matrices, training and test sets.  
+  
+## 4 inputs to knn()   
+train.X = matrix containing predictors associated with training data
+test.X = matrix containing predictors associated with data used to make predictions
+train.Direction = vector containing class labels for training observations
+K = number of nearest neighbors
+
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(class)
+train.X = cbind(Smarket$Lag1, Smarket$Lag2)[train,]
+test.X = cbind(Smarket$Lag1, Smarket$Lag2)[!train,]
+train.Direction = Smarket$Direction[train]
+
+```
+
+## knn() function
+K = 1 not good because 50% accuracy. Maybe too flexible fit for the data.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# Set random seed to ensure reproducibility. Several observations may be tied as nearest neighbors
+set.seed(1)
+
+# Predict
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.2005)
+
+(83+43)/252
+
+```
+
+K = 3 resulted in slight improvement in accuracy. Thus, not correct model.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+knn.pred = knn(train.X, test.X, train.Direction, k = 3)
+table(knn.pred, Direction.2005)
+
+(87+48)/252
 
 ```
 
@@ -251,10 +290,26 @@ mean(qda.class == Direction.2005)
 
 ```
 
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+```
+
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 ```
 
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+```
 
 
