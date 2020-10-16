@@ -1,0 +1,197 @@
+---
+title: "LAB: Logistic Regression, LDA, QDA and KNN"
+output: pdf_document
+---
+
+This exercise comes from Statistcal Learning in R certificate course from Stanford University online. Code tutorial taken from An Introduction to Statistical Learning with Applications in R (James, Witten, Hastie, and Tibshirani).
+
+# Stock Market Data
+Percetange returns for S&P 5000 stock index over 1,250 (2001-2005). Each date, recorded percentage returns of the five previous trading days (Lag1-Lag5). Recorded Volume (number of shares traded on previous day, in billions), Today (percentage return on that date), Direction (market Up or Down)
+
+## Load and View Data
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  library(ISLR)
+  names(Smarket)
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  summary(Smarket)
+
+```
+
+# Correlation 
+Creates matrix containing all pairwise correlation among predictors in data set.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  cor(Smarket[,-9]) #remove Direction column
+
+```
+
+## Plotting substantial correlations
+No correlation between Today and Lag1-Lag5. Substantial correlation between Year and Volume. Plot show that Volume increases over Time, i.e. average number of shares traded daily increased from 2001-2005.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  plot(Smarket$Volume)
+
+```
+
+
+#Logistic Regression
+## Plotting two-class variable for each class
+Not much correlation happening since stock market not easy to predict.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  pairs(Smarket,col=Smarket$Direction)
+
+```
+
+## Fit Generalized Linear Model to Run Logistic Regression
+Use family=binomial to indicate logistic regression. Predict Direction using Lag1-Lag5 and Volume.
+Findings: None of the coefficients are significant. Smallest p-value out of all variables is Lag1, but still indicates no clear evidence of association.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  glm.fits = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                 data = Smarket, family = binomial)
+
+  summary(glm.fits)
+
+```
+
+## Prediction
+### Predict the probability that market will go up, given the predictors.
+All close to 50% so no strong predictions
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  glm.probs = predict(glm.fits,type = "response") #output probability in P(Y = 1|X)
+  glm.probs[1:10] #print first 10 probabilities
+
+```
+
+### View dummy variable values
+Down = 0
+Up = 1
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  contrasts(Smarket$Direction)
+
+```
+
+### Convert Probabilities Into Class Labels
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  glm.pred = rep("Down", 1250) # create vector of 1250 Down element
+  glm.pred[glm.probs > .5] = "Up" # label "Up" for probabilities greater than 5 
+```
+
+### Confusion Matrix
+Determine how many observations were correctly or incorrectly classified.
+Results: Correctly predicted market go up 507 days and go down 145 days.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  table(glm.pred, Smarket$Direction)
+
+```
+
+## Error Rates
+### Training Error Rate
+Compute fraction of days where prediction was correct.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  mean(glm.pred == Smarket$Direction)
+
+```
+
+Training error rate underestimates training test error rate
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  100-52.16
+
+```
+
+### Better assessment of test error rate
+Fit model using part of the data and examine who well it predicts held out data. Realistic error rate to predict Direction probability of future data for which market movements are unknown.  
+
+Make training and test set (Do worse than the training )
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+  train = Smarket$Year < 2005
+
+  # Refit glm.fits and subset only the years before 2005
+    glm.fit = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                  data = Smarket, family = binomial, subset = train)
+
+  # Validate the data using 2005 data
+    glm.probs = predict(glm.fit, newdata = Smarket[!train,], type = "response")
+    glm.pred = ifelse(glm.probs > 0.5, "Up", "Down") #add response variable
+    Direction.2005 = Smarket$Direction[!train] # new variable
+
+  # Confusion matrix
+    table(glm.pred, Direction.2005)
+
+  # Compute mean
+    mean(glm.pred == Direction.2005)
+
+```
+
+Fit a smaller model (appears to have done better, but not significant)
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  glm.fit = glm(Direction ~ Lag1 + Lag2, data = Smarket, family = binomial, subset = train)
+  glm.probs = predict(glm.fit, newdata = Smarket[!train,], type = "response")
+  glm.pred = ifelse(glm.probs > 0.5, "Up", "Down")
+  table(glm.pred, Direction.2005)
+  mean(glm.pred == Direction.2005)
+  
+  #See significance
+    summary(glm.fit)
+
+```
+
+
+# Linear Discriminant Analysis
+Response = direct market took on a particular day (prediction based on the returns on the previous 2 days)
+
+## Fit the Model -basically random probability of direction
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  require(ISLR)
+  require(MASS) 
+  
+  #Fit the model using the training day (Year > 2005)
+    lda.fit = lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = Year < 2005)
+    lda.fit
+  
+  # Plot
+    plot(lda.fit)
+```
+
+## Validate/Predict
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  Smarket.2005 = subset(Smarket, Year == 2005)
+  lda.pred = predict(lda.fit, Smarket.2005)
+  class(lda.pred) # check the format (a list)
+  data.frame(lda.pred)[1:5,] 
+  table(lda.pred$class, Smarket.2005$Direction) #confusion matrix
+  mean(lda.pred$class == Smarket.2005$Direction)
+
+```
+
+# K-Nearest Neighbors - Do the best 1/3 of the time; Very simple method
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+  library(class)
+  
+  Xlag = cbind(Smarket$Lag1, Smarket$Lag2) #create a matrix of 2 columns
+  Xlag[1:5,] # view matrix
+  
+  train = Smarket$Year < 2005 # create indicator variable
+  
+  knn.pred = knn(Xlag[train,], Xlag[!train,], Smarket$Direction[train], k = 1)
+  table(knn.pred, Smarket$Direction[!train])
+  mean(knn.pred == Smarket$Direction[!train])
+```
+
